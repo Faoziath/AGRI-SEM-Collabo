@@ -7,25 +7,37 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Sprout, CheckCircle } from 'lucide-react';
 
+// ✅ Import du service
+import { requestPasswordReset } from '@/services/authService';
+
 export default function AuthReset() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      const res = await requestPasswordReset(email);
       setSent(true);
-      setIsLoading(false);
       toast({
-        title: 'Email envoyé',
-        description: 'Vérifiez votre boîte de réception',
+        title: "Email envoyé",
+        description: res?.message || "Vérifiez votre boîte de réception",
       });
-    }, 1000);
+    } catch (error: any) {
+      toast({
+        title: "Erreur",
+        description:
+          error?.response?.data?.message ||
+          error?.message ||
+          "Erreur lors de l'envoi de l'email",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (sent) {

@@ -24,12 +24,22 @@ export default function Catalog() {
 
   // Fetch cultures
   const { data: cultures = [] } = useQuery({
-    queryKey: ['/api/v1/cultures'],
+  queryKey: ['/api/v1/cultures'],
+    queryFn: async () => {
+      const res = await fetch('/api/v1/cultures');
+      if (!res.ok) throw new Error('Failed to fetch cultures');
+      return res.json();
+    },
   });
 
   // Fetch varieties (fetch all, not filtered by culture)
   const { data: allVarieties = [] } = useQuery({
     queryKey: ['/api/v1/varieties'],
+    queryFn: async () => {
+      const res = await fetch('/api/v1/varieties');
+      if (!res.ok) throw new Error('Erreur de chargement des variétés');
+      return res.json();
+    },
   });
 
   // Filter varieties by selected cultures
@@ -75,13 +85,13 @@ export default function Catalog() {
 
   // Filter products based on criteria
   const filteredProducts = products.filter((product) => {
-    const variety = varieties.find(v => v.id === product.varietyId);
-    if (!variety) return false;
+    // const variety = varieties.find(v => v.id === product.varietyId);
+    // if (!variety) return false;
 
     // Culture filter
-    if (selectedCultures.length > 0 && !selectedCultures.includes(variety.cultureId)) {
-      return false;
-    }
+    // if (selectedCultures.length > 0 && !selectedCultures.includes(variety.cultureId)) {
+    //   return false;
+    // }
 
     // Price filter
     if (product.priceCents < priceRange[0] || product.priceCents > priceRange[1]) {

@@ -17,9 +17,14 @@ import ArticleDetail from "@/pages/ArticleDetail";
 import AuthLogin from "@/pages/AuthLogin";
 import AuthRegister from "@/pages/AuthRegister";
 import AuthReset from "@/pages/AuthReset";
+import AuthRegisterSuccess from "./pages/AuthRegisterSuccess";
 import SupplierProducts from "@/pages/SupplierProducts";
 import SupplierOrders from "@/pages/SupplierOrders";
 import Admin from "@/pages/Admin";
+import ProtectedRoute from "@/components/ProtectedRoute";
+import DashboardProducer from "@/pages/DashboardProducer";
+import DashboardSupplier from "@/pages/DashboardSupplier";
+import DashboardAdmin from "@/pages/DashboardAdmin";
 
 function Router() {
   return (
@@ -35,11 +40,39 @@ function Router() {
       <Route path="/auth/login" component={AuthLogin} />
       <Route path="/auth/register" component={AuthRegister} />
       <Route path="/auth/reset" component={AuthReset} />
+      <Route path="/auth/register/success" component={AuthRegisterSuccess} />
       
       {/* Protected Pages */}
       <Route path="/checkout" component={Checkout} />
       <Route path="/messaging" component={Messaging} />
       <Route path="/dashboard" component={Dashboard} />
+
+      <Route
+        path="/dashboard/producer"
+        component={() => (
+          <ProtectedRoute>
+            <DashboardProducer />
+          </ProtectedRoute>
+        )}
+      />
+
+      <Route
+        path="/dashboard/supplier"
+        component={() => (
+          <ProtectedRoute>
+            <DashboardSupplier />
+          </ProtectedRoute>
+        )}
+      />
+
+      <Route
+        path="/dashboard/admin"
+        component={() => (
+          <ProtectedRoute>
+            <DashboardAdmin />
+          </ProtectedRoute>
+        )}
+      />
       
       {/* Supplier Pages */}
       <Route path="/supplier/products" component={SupplierProducts} />

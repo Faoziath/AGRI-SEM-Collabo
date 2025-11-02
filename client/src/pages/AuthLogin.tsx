@@ -9,7 +9,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Sprout } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { loginSchema, type LoginCredentials } from '@shared/schema';
+import { loginSchema, type LoginCredentials } from '@/shared/schema';
+import { login as loginUser } from '@/services/authService';
 
 export default function AuthLogin() {
   const [, navigate] = useLocation();
@@ -22,35 +23,53 @@ export default function AuthLogin() {
     handleSubmit,
     formState: { errors },
   } = useForm<LoginCredentials>({
-    resolver: zodResolver(loginSchema),
+    resolver: zodResolver(loginSchema as any),
   });
 
   const onSubmit = async (data: LoginCredentials) => {
     setIsLoading(true);
+    try {
+      const res = await loginUser(data);
 
-    // Simulate API call - will be replaced with MSW in Task 2
-    setTimeout(() => {
-      // Mock successful login
-      setAuth(
-        {
-          id: 1,
-          email: data.email,
-          role: 'PRODUCER',
-          firstName: 'Jean',
-          lastName: 'Dupont',
-          isVerified: true,
-        },
-        'mock-token'
-      );
+      if (!res?.accessToken) {
+        throw new Error(res?.message || "Identifiants invalides");
+      }
 
+      const { accessToken, refreshToken, user } = res;
+
+      // ✅ Sauvegarde des tokens
+      localStorage.setItem("accessToken", accessToken);
+      if (refreshToken) localStorage.setItem("refreshToken", refreshToken);
+
+      setAuth(user, accessToken);
+      toast({ title: "Connexion réussie", description: `Bienvenue, ${user.firstName || 'utilisateur'} 👋` });
+
+      // ✅ Redirection selon le rôle utilisateur
+      switch (user.role) {
+        case "SUPPLIER":
+          navigate("/dashboard/supplier");
+          break;
+        case "ADMIN":
+          navigate("/dashboard/admin");
+          break;
+        case "PRODUCER":
+        default:
+          navigate("/dashboard/producer");
+          break;
+      }
+
+    } catch (error: any) {
       toast({
-        title: 'Connexion réussie',
-        description: 'Bienvenue sur AGRI-SEM',
+        title: "Erreur de connexion",
+        description:
+          error?.response?.data?.message ||
+          error?.message ||
+          "Veuillez vérifier vos identifiants",
+        variant: "destructive",
       });
-
+    } finally {
       setIsLoading(false);
-      navigate('/dashboard');
-    }, 1000);
+    }
   };
 
   return (

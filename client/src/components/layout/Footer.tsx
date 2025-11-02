@@ -22,18 +22,27 @@ export function Footer() {
             <h3 className="font-semibold mb-4">Liens Utiles</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/catalog">
-                  <a className="hover:text-brand-accent transition-colors">Catalogue</a>
+                <Link
+                  href="/catalog"
+                  className="hover:text-brand-accent transition-colors"
+                >
+                  Catalogue
                 </Link>
               </li>
               <li>
-                <Link href="/articles">
-                  <a className="hover:text-brand-accent transition-colors">Conseils Agricoles</a>
+                <Link
+                  href="/articles"
+                  className="hover:text-brand-accent transition-colors"
+                >
+                  Conseils Agricoles
                 </Link>
               </li>
               <li>
-                <Link href="/auth/register">
-                  <a className="hover:text-brand-accent transition-colors">Devenir Fournisseur</a>
+                <Link
+                  href="/auth/register"
+                  className="hover:text-brand-accent transition-colors"
+                >
+                  Devenir Fournisseur
                 </Link>
               </li>
             </ul>

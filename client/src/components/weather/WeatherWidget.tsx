@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Cloud, CloudRain, Sun, Droplets } from 'lucide-react';
-import type { WeatherForecast } from '@shared/schema';
+import type { WeatherForecast } from '@/shared/schema';
 
 interface WeatherWidgetProps {
   forecast: WeatherForecast[];

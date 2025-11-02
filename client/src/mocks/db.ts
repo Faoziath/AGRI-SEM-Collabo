@@ -12,7 +12,7 @@ import type {
   Article,
   WeatherAlert,
   Address,
-} from '@shared/schema';
+} from '@/shared/schema';
 
 // In-memory database
 export class MockDatabase {

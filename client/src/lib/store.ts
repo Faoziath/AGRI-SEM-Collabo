@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { User, CartItem } from '@shared/schema';
+import type { User, CartItem } from '@/shared/schema';
 
 interface AuthState {
   user: User | null;

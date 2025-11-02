@@ -1,148 +1,235 @@
-import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { StockBadge } from '@/components/product/StockBadge';
-import { Plus, Edit, Trash2 } from 'lucide-react';
-import { useAuthStore } from '@/lib/store';
-import { EmptyState } from '@/components/ui/empty-state';
-import { Package2 } from 'lucide-react';
+import { useState, useEffect, ChangeEvent } from "react";
+import {
+  useSupplierProducts,
+  useCreateProduct,
+  useUpdateProduct,
+  useDeleteProduct,
+} from "@/hooks/useSupplier";
+import { Button } from "@/components/ui/button";
+import { Plus, ImagePlus } from "lucide-react";
+import { useAuthStore } from "@/lib/store";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Package2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+import { SupplierProductCard } from "@/components/supplier/SupplierProductCard"; 
 
 export default function SupplierProducts() {
   const { user } = useAuthStore();
-  const [view, setView] = useState<'grid' | 'table'>('grid');
+  const { toast } = useToast();
 
-  // Mock products - will be replaced with API call in Task 3
-  const products = user?.role === 'SUPPLIER' ? [
-    {
-      id: 1,
-      title: 'Semences Maïs Hybride FBC6 - Sac 25kg',
-      sku: 'SKU-1001',
-      priceCents: 15000,
-      currency: 'XOF',
-      stock: 45,
-      status: 'ACTIVE' as const,
-      images: ['https://picsum.photos/seed/1/400/300'],
-    },
-    {
-      id: 2,
-      title: 'Semences Riz NERICA - Sac 20kg',
-      sku: 'SKU-1002',
-      priceCents: 18000,
-      currency: 'XOF',
-      stock: 8,
-      status: 'ACTIVE' as const,
-      images: ['https://picsum.photos/seed/2/400/300'],
-    },
-    {
-      id: 3,
-      title: 'Semences Tomate Roma - 500g',
-      sku: 'SKU-1003',
-      priceCents: 5000,
-      currency: 'XOF',
-      stock: 0,
-      status: 'DRAFT' as const,
-      images: ['https://picsum.photos/seed/3/400/300'],
-    },
-  ] : [];
+  const { data, isLoading } = useSupplierProducts();
+  const products = data || []; // <- on accède à "data" selon ton retour d’API
 
-  if (user?.role !== 'SUPPLIER') {
+  const createMutation = useCreateProduct();
+  const updateMutation = useUpdateProduct();
+
+  const [openForm, setOpenForm] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<any>(null);
+  const [formData, setFormData] = useState({
+    title: "",
+    sku: "",
+    priceCents: 0,
+    stock: 0,
+    currency: "XOF",
+  });
+  const [files, setFiles] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<string[]>([]);
+
+  // 🔄 Génération des previews d’images
+  useEffect(() => {
+    if (files.length > 0) {
+      const urls = files.map((f) => URL.createObjectURL(f));
+      setPreviews(urls);
+      return () => urls.forEach((u) => URL.revokeObjectURL(u));
+    } else {
+      setPreviews([]);
+    }
+  }, [files]);
+
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setFiles(Array.from(e.target.files));
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      if (editingProduct) {
+        await updateMutation.mutateAsync({
+          id: editingProduct.id,
+          payload: formData,
+          images: files,
+        });
+        toast({ title: "Produit mis à jour ✅" });
+      } else {
+        await createMutation.mutateAsync({ payload: formData, images: files });
+        toast({ title: "Produit ajouté ✅" });
+      }
+
+      setFiles([]);
+      setPreviews([]);
+      setOpenForm(false);
+      setFormData({
+        title: "",
+        sku: "",
+        priceCents: 0,
+        stock: 0,
+        currency: "XOF",
+      });
+    } catch (err) {
+      toast({
+        title: "Erreur d’enregistrement ❌",
+        description: "Impossible de sauvegarder le produit",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (user?.role !== "SUPPLIER") {
     return (
-      <div className="container mx-auto px-4 py-16">
-        <EmptyState
-          icon={Package2}
-          title="Accès restreint"
-          description="Cette page est réservée aux fournisseurs"
-          action={{
-            label: 'Retour à l\'accueil',
-            onClick: () => window.location.href = '/',
-          }}
-        />
-      </div>
+      <EmptyState
+        icon={Package2}
+        title="Accès restreint"
+        description="Cette page est réservée aux fournisseurs"
+      />
     );
   }
 
   return (
     <div className="min-h-screen bg-background">
+      {/* HEADER */}
       <div className="bg-muted/30 border-b">
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold mb-2" data-testid="text-page-title">
-                Mes Produits
-              </h1>
-              <p className="text-muted-foreground">
-                Gérez votre catalogue de semences
-              </p>
-            </div>
-            <Button data-testid="button-add-product">
-              <Plus className="h-4 w-4 mr-2" />
-              Nouveau produit
-            </Button>
+        <div className="container mx-auto px-4 py-8 flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold">Mes Produits</h1>
+            <p className="text-muted-foreground">Gérez votre catalogue de semences</p>
           </div>
+          <Button onClick={() => { setEditingProduct(null); setOpenForm(true); }}>
+            <Plus className="h-4 w-4 mr-2" /> Nouveau produit
+          </Button>
         </div>
       </div>
 
+      {/* PRODUITS */}
       <div className="container mx-auto px-4 py-8">
-        {products.length === 0 ? (
+        {isLoading ? (
+          <p>Chargement...</p>
+        ) : products.length === 0 ? (
           <EmptyState
             icon={Package2}
             title="Aucun produit"
-            description="Commencez par ajouter votre premier produit au catalogue"
-            action={{
-              label: 'Ajouter un produit',
-              onClick: () => console.log('Add product'),
-            }}
+            description="Ajoutez votre premier produit au catalogue."
           />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {products.map((product) => (
-              <Card key={product.id} data-testid={`card-product-${product.id}`}>
-                <div className="aspect-[4/3] relative overflow-hidden bg-muted rounded-t-lg">
-                  <img
-                    src={product.images[0]}
-                    alt={product.title}
-                    className="object-cover w-full h-full"
-                  />
-                  <div className="absolute top-2 right-2">
-                    <StockBadge stock={product.stock} />
-                  </div>
-                  <div className="absolute top-2 left-2">
-                    <Badge variant={product.status === 'ACTIVE' ? 'default' : 'secondary'}>
-                      {product.status === 'ACTIVE' ? 'Actif' : 'Brouillon'}
-                    </Badge>
-                  </div>
-                </div>
-
-                <CardContent className="p-4">
-                  <h3 className="font-semibold mb-2 line-clamp-2">
-                    {product.title}
-                  </h3>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    SKU: {product.sku}
-                  </p>
-                  <div className="flex items-baseline gap-2 mb-4">
-                    <span className="text-xl font-bold text-brand-accent">
-                      {(product.priceCents / 100).toLocaleString('fr-FR')}
-                    </span>
-                    <span className="text-sm text-muted-foreground">{product.currency}</span>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" className="flex-1" data-testid={`button-edit-${product.id}`}>
-                      <Edit className="h-4 w-4 mr-1" />
-                      Modifier
-                    </Button>
-                    <Button variant="ghost" size="sm" className="text-destructive" data-testid={`button-delete-${product.id}`}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+            {products.map((product: any) => (
+              <SupplierProductCard
+                key={product.id}
+                product={{
+                  id: product.id,
+                  title: product.title,
+                  sku: product.sku,
+                  priceCents: product.priceCents,
+                  stock: product.stock,
+                  currency: product.currency,
+                  status: product.status,
+                  images: product.images || [],
+                }}
+                onEdit={(prod) => {
+                  setEditingProduct(prod);
+                  setFormData({
+                    title: prod.title,
+                    sku: prod.sku,
+                    priceCents: prod.priceCents,
+                    stock: prod.stock,
+                    currency: prod.currency,
+                  });
+                  setOpenForm(true);
+                }}
+              />
             ))}
           </div>
         )}
       </div>
+
+      {/* FORMULAIRE PRODUIT */}
+      <Dialog open={openForm} onOpenChange={setOpenForm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {editingProduct ? "Modifier le produit" : "Nouveau produit"}
+            </DialogTitle>
+          </DialogHeader>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <Label>Titre</Label>
+              <Input
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                required
+              />
+            </div>
+
+            <div>
+              <Label>SKU</Label>
+              <Input
+                value={formData.sku}
+                onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Prix (en XOF)</Label>
+                <Input
+                  type="number"
+                  value={formData.priceCents}
+                  onChange={(e) => setFormData({ ...formData, priceCents: Number(e.target.value) })}
+                />
+              </div>
+              <div>
+                <Label>Stock</Label>
+                <Input
+                  type="number"
+                  value={formData.stock}
+                  onChange={(e) => setFormData({ ...formData, stock: Number(e.target.value) })}
+                />
+              </div>
+            </div>
+
+            {/* Upload images */}
+            <div>
+              <Label>Images du produit</Label>
+              <div className="flex items-center gap-2 mt-2">
+                <Input type="file" multiple accept="image/*" onChange={handleFileChange} />
+                <ImagePlus className="h-5 w-5 text-muted-foreground" />
+              </div>
+
+              {previews.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {previews.map((url, idx) => (
+                    <img
+                      key={idx}
+                      src={url}
+                      className="w-20 h-20 object-cover rounded-md border"
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <Button type="submit" className="w-full mt-4">
+              {editingProduct ? "Mettre à jour" : "Créer"}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

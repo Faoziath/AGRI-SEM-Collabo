@@ -71,21 +71,21 @@ export default function Admin() {
     // Will be implemented with API in Task 3
   };
 
-  if (user?.role !== 'ADMIN') {
-    return (
-      <div className="container mx-auto px-4 py-16">
-        <EmptyState
-          icon={Shield}
-          title="Accès restreint"
-          description="Cette page est réservée aux administrateurs"
-          action={{
-            label: 'Retour à l\'accueil',
-            onClick: () => window.location.href = '/',
-          }}
-        />
-      </div>
-    );
-  }
+  // if (user?.role !== 'ADMIN') {
+  //   return (
+  //     <div className="container mx-auto px-4 py-16">
+  //       <EmptyState
+  //         icon={Shield}
+  //         title="Accès restreint"
+  //         description="Cette page est réservée aux administrateurs"
+  //         action={{
+  //           label: 'Retour à l\'accueil',
+  //           onClick: () => window.location.href = '/',
+  //         }}
+  //       />
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className="min-h-screen bg-background">

@@ -1,5 +1,5 @@
 import { db } from './db';
-import type { Role, ProductStatus, ArticleStatus, OrderStatus } from '@shared/schema';
+import type { Role, ProductStatus, ArticleStatus, OrderStatus, Product } from '@/shared/schema';
 
 export function seedDatabase() {
   console.log('🌱 Seeding database...');

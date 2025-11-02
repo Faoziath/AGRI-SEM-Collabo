@@ -1,81 +1,88 @@
-import express, { type Request, Response, NextFunction } from "express";
-import { registerRoutes } from "./routes";
-import { setupVite, serveStatic, log } from "./vite";
+// server/index.ts
+import express, { Request, Response, NextFunction } from "express";
+import cors from "cors";
+import dotenv from "dotenv";
+import { PrismaClient } from "@prisma/client";
+import authRoutes from "./routes/auth.routes.js";
+import supplierRouter from "./routes/supplier.routes.js";
+import { setupSwagger } from "./swagger.js";
+import path from "path";
+
+dotenv.config();
 
 const app = express();
+const prisma = new PrismaClient();
 
-declare module 'http' {
-  interface IncomingMessage {
-    rawBody: unknown
-  }
-}
+// --- 🔧 CORS configuration ---
+app.use(cors({
+  origin: [
+    "http://localhost:5173", // Frontend local (Vite)
+    "https://agrisem.com",   // Frontend en production
+  ],
+  credentials: true,
+}));
+
+// ---  Body parsing ---
 app.use(express.json({
-  verify: (req, _res, buf) => {
+  verify: (req: any, _res, buf) => {
     req.rawBody = buf;
   }
 }));
 app.use(express.urlencoded({ extended: false }));
 
-app.use((req, res, next) => {
+// ---  Logging middleware ---
+app.use((req: Request, res: Response, next: NextFunction) => {
   const start = Date.now();
   const path = req.path;
-  let capturedJsonResponse: Record<string, any> | undefined = undefined;
 
-  const originalResJson = res.json;
-  res.json = function (bodyJson, ...args) {
-    capturedJsonResponse = bodyJson;
-    return originalResJson.apply(res, [bodyJson, ...args]);
+  const originalJson = res.json;
+  let responseBody: any;
+
+  // Capture la réponse JSON pour la log
+  res.json = function (body: any) {
+    responseBody = body;
+    return originalJson.call(this, body);
   };
 
   res.on("finish", () => {
-    const duration = Date.now() - start;
     if (path.startsWith("/api")) {
+      const duration = Date.now() - start;
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+      if (responseBody && typeof responseBody === "object") {
+        const preview = JSON.stringify(responseBody).slice(0, 100);
+        logLine += ` :: ${preview}${preview.length === 100 ? "…" : ""}`;
       }
-
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
-      }
-
-      log(logLine);
+      console.log(logLine);
     }
   });
 
   next();
 });
 
-(async () => {
-  const server = await registerRoutes(app);
+// --- Routes principales ---
+app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/supplier", supplierRouter);
+// Rendre les fichiers du dossier uploads accessibles publiquement
+// app.use("/uploads", express.static("uploads"));
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
+// Serve static uploads folder publically
+app.use("/uploads", express.static(path.join(process.cwd(), process.env.UPLOAD_ROOT || "uploads")));
 
-    res.status(status).json({ message });
-    throw err;
-  });
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
-  if (app.get("env") === "development") {
-    await setupVite(app, server);
-  } else {
-    serveStatic(app);
-  }
+// --- Gestion des erreurs globales ---
+app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  console.error("❌ Server Error:", err);
+  const status = err.status || 500;
+  const message = err.message || "Internal Server Error";
+  res.status(status).json({ message });
+});
 
-  // ALWAYS serve the app on the port specified in the environment variable PORT
-  // Other ports are firewalled. Default to 5000 if not specified.
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = parseInt(process.env.PORT || '5000', 10);
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
-    log(`serving on port ${port}`);
-  });
-})();
+// --- Swagger documentation ---
+setupSwagger(app);
+
+// --- Démarrage du serveur ---
+const PORT = process.env.PORT || 5001;
+app.listen(PORT, () => {
+  console.log(`[Express] Server running on http://localhost:${PORT}`);
+  console.log(`Swagger Docs available at http://localhost:${PORT}/api-docs`);
+});

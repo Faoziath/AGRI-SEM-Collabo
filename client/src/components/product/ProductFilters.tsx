@@ -5,7 +5,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
-import type { Culture } from '@shared/schema';
+import type { Culture } from '@/shared/schema';
 
 interface ProductFiltersProps {
   cultures: Culture[];

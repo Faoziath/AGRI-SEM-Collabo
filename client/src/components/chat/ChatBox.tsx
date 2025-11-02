@@ -5,7 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Send, Paperclip } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import type { Message } from '@shared/schema';
+import type { Message } from '@/shared/schema';
 import { useAuthStore } from '@/lib/store';
 
 interface ChatBoxProps {

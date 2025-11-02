@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { StockBadge } from './StockBadge';
 import { Badge } from '@/components/ui/badge';
 import { ShoppingCart, Droplets, Sun, Clock } from 'lucide-react';
-import type { Product } from '@shared/schema';
+import type { Product } from '@/shared/schema';
 
 interface ProductCardProps {
   product: Product;
@@ -16,30 +16,29 @@ export function ProductCard({ product, variety }: ProductCardProps) {
   const imageUrl = product.images[0] || `https://picsum.photos/seed/${product.id}/400/300`;
 
   return (
-    <Card className="overflow-hidden hover-elevate transition-all" data-testid={`card-product-${product.id}`}>
+    <Card
+      className="overflow-hidden hover-elevate transition-all"
+      data-testid={`card-product-${product.id}`}
+    >
       <Link href={`/products/${product.id}`}>
-        <a>
-          <div className="aspect-[4/3] relative overflow-hidden bg-muted">
-            <img
-              src={imageUrl}
-              alt={product.title}
-              className="object-cover w-full h-full hover:scale-105 transition-transform duration-300"
-              data-testid={`img-product-${product.id}`}
-            />
-            <div className="absolute top-2 right-2">
-              <StockBadge stock={product.stock} />
-            </div>
+        <div className="aspect-[4/3] relative overflow-hidden bg-muted cursor-pointer">
+          <img
+            src={imageUrl}
+            alt={product.title}
+            className="object-cover w-full h-full hover:scale-105 transition-transform duration-300"
+            data-testid={`img-product-${product.id}`}
+          />
+          <div className="absolute top-2 right-2">
+            <StockBadge stock={product.stock} />
           </div>
-        </a>
+        </div>
       </Link>
 
       <CardContent className="p-4">
         <Link href={`/products/${product.id}`}>
-          <a>
-            <h3 className="font-semibold text-lg mb-2 line-clamp-2 hover:text-primary transition-colors" data-testid={`text-product-title-${product.id}`}>
-              {product.title}
-            </h3>
-          </a>
+          <h3 className="font-semibold text-lg mb-2 line-clamp-2 hover:text-primary transition-colors cursor-pointer">
+            {product.title}
+          </h3>
         </Link>
 
         {variety && (
@@ -47,13 +46,14 @@ export function ProductCard({ product, variety }: ProductCardProps) {
         )}
 
         <div className="flex items-baseline gap-2 mb-3">
-          <span className="text-2xl font-bold text-brand-accent" data-testid={`text-price-${product.id}`}>
+          <span className="text-2xl font-bold text-brand-accent">
             {price}
           </span>
-          <span className="text-sm text-muted-foreground">{product.currency}</span>
+          <span className="text-sm text-muted-foreground">
+            {product.currency}
+          </span>
         </div>
 
-        {/* Product Specs */}
         <div className="flex flex-wrap gap-2 mb-4">
           {variety && (
             <>
@@ -80,12 +80,14 @@ export function ProductCard({ product, variety }: ProductCardProps) {
 
       <CardFooter className="p-4 pt-0">
         <Link href={`/products/${product.id}`}>
-          <a className="w-full">
-            <Button className="w-full" disabled={product.stock === 0} data-testid={`button-view-product-${product.id}`}>
-              <ShoppingCart className="h-4 w-4 mr-2" />
-              {product.stock === 0 ? 'Rupture de stock' : 'Voir le produit'}
-            </Button>
-          </a>
+          <Button
+            className="w-full"
+            disabled={product.stock === 0}
+            data-testid={`button-view-product-${product.id}`}
+          >
+            <ShoppingCart className="h-4 w-4 mr-2" />
+            {product.stock === 0 ? 'Rupture de stock' : 'Voir le produit'}
+          </Button>
         </Link>
       </CardFooter>
     </Card>

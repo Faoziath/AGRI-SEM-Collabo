@@ -10,7 +10,10 @@ import { useToast } from '@/hooks/use-toast';
 import { Sprout } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { insertUserSchema, type InsertUser } from '@shared/schema';
+import { insertUserSchema, type InsertUser } from '@/shared/schema'
+
+// ✅ On importe le service d'inscription depuis authService
+import { register as registerUser } from '@/services/authService';
 
 export default function AuthRegister() {
   const [, navigate] = useLocation();
@@ -25,7 +28,7 @@ export default function AuthRegister() {
     setValue,
     formState: { errors },
   } = useForm<InsertUser>({
-    resolver: zodResolver(insertUserSchema),
+    resolver: zodResolver(insertUserSchema as any),
     defaultValues: {
       role: 'PRODUCER',
     },
@@ -33,34 +36,37 @@ export default function AuthRegister() {
 
   const role = watch('role');
 
+  // ✅ On remplace api.post() par registerUser()
   const onSubmit = async (data: InsertUser) => {
     setIsLoading(true);
+    try {
+      const res = await registerUser(data);
 
-    // Simulate API call - will be replaced with MSW in Task 2
-    setTimeout(() => {
-      setAuth(
-        {
-          id: Date.now(),
-          email: data.email,
-          role: data.role,
-          firstName: data.firstName,
-          lastName: data.lastName,
-          orgName: data.orgName,
-          phone: data.phone,
-          isVerified: true,
-          isSupplierVerified: data.role === 'SUPPLIER' ? false : undefined,
-        },
-        'mock-token'
-      );
+      if (res?.message) {
+        toast({
+          title: "Inscription réussie",
+          description: res.message,
+        });
+      } else {
+        toast({
+          title: "Inscription réussie",
+          description: "Vérifiez votre e-mail pour confirmer votre compte",
+        });
+      }
 
+      navigate("/auth/register/success");
+    } catch (error: any) {
       toast({
-        title: 'Inscription réussie',
-        description: 'Bienvenue sur AGRI-SEM',
+        title: "Erreur d'inscription",
+        description:
+          error?.response?.data?.message ||
+          error?.message ||
+          "Erreur serveur",
+        variant: "destructive",
       });
-
+    } finally {
       setIsLoading(false);
-      navigate('/dashboard');
-    }, 1000);
+    }
   };
 
   return (
@@ -207,7 +213,7 @@ export default function AuthRegister() {
               disabled={isLoading}
               data-testid="button-register"
             >
-              {isLoading ? 'Inscription...' : 'S\'inscrire'}
+              {isLoading ? 'Inscription...' : "S'inscrire"}
             </Button>
 
             <div className="text-center text-sm">

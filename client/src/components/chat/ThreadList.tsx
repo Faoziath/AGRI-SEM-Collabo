@@ -2,7 +2,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import type { Thread } from '@shared/schema';
+import type { Thread } from '@/shared/schema';
 import { MessageCircle } from 'lucide-react';
 
 interface ThreadListProps {
